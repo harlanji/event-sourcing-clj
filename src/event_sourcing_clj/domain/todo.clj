@@ -4,13 +4,20 @@
 ; -- domain model + commands using defprotocol + defrecord for hinting
 
 (defprotocol TodoCommands
-  (create-new [_ id attrs])
-  (modify [_ id attrs])
-  ;(done [_ id])
-  (delete [_ id]))
+  (create-new [_ id text])
+  (change-text [_ id new-text])
+  (set-completed [_ id completed?])
+  (delete [_ id])
+  (clear-done [_]) ; transactionally consistent... 1->many command example (tx boundary variant)
+  )
+
+(defprotocol TodoQueries
+  (all-todos [_])
+  (get-todo [_ id]))
 
 (defrecord Todo [id text completed?])
 
+(declare modify)
 
 (defrecord TodosAggregate
   [todos]
@@ -23,17 +30,17 @@
   (accept [store [evt opts]]
     ; note we do our own dispatch
     (cond
-      (= evt ::todo-created)
+      (= evt :crud/created)
       (let [todo opts]
         (update store :todos assoc (:id todo) todo))
 
-      (= evt ::todo-modified)
+      (= evt :crud/modified)
       (let [changed-todo opts
             id (:id changed-todo)
             todos (update todos id merge changed-todo)]
         (assoc store :todos todos))
 
-      (= evt ::todo-deleted)
+      (= evt :crud/deleted)
       (let [id opts]
         (update store :todos dissoc id))))
 
@@ -44,28 +51,43 @@
 
   ; event or nil returned for a command
   TodoCommands
-  (create-new [_ id attrs]
+  (create-new [_ id text]
     (when-not (contains? todos id)
-      (let [todo (map->Todo (merge attrs {:id id}))]
-        [::todo-created todo])))
-  (modify [_ id attrs]
-    (when (contains? todos id)
-      (let [updates (merge attrs {:id id})]
-        [::todo-modified updates])))
+      (let [todo (map->Todo {:id id
+                             :text text
+                             :completed? false})]
+        [:crud/created todo])))
+
+  (change-text [_ id new-text]
+    (modify todos id {:text new-text}))
+
+  (set-completed [_ id completed?]
+    (modify todos id {:completed? completed?}))
+
   (delete [_ id]
     (when (contains? todos id)
-      [::todo-deleted id])))
+      [:crud/deleted id]))
 
 
-(defn all-todos [todos]
-  (into #{} (vals (:todos todos))))
+  TodoQueries
+  (all-todos [_]
+    (into #{} (vals todos)))
 
-(defn get-todo [todos id]
-  ; fixme slow if first doesn't terminate (transducer style)
-  (->> (all-todos todos)
-       (filter #(= (:id %) id))
-       (first)))
+  (get-todo [this id]
+    ; fixme slow if first doesn't terminate (transducer style)
+    (->> (all-todos this) ; this is clunky (state vs todos... ambiguous to reader)
+         (filter #(= (:id %) id))
+         (first)))
 
+  )
+
+
+
+(defn- modify [todos id attrs]
+  (when (contains? todos id)
+    ; this map->Todo thing is a hack... need to infer type of thing without having it
+    (let [updates (merge (map->Todo {}) attrs {:id id})]
+      [:crud/modified updates])))
 
 (defn make-todos []
   (map->TodosAggregate {:todos {}}))

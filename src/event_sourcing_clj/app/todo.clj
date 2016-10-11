@@ -24,15 +24,12 @@
 
   TodoAppCommands
   (create-todo [_ text]
-    (let [id (str "todo-" (Math/random))
-          attrs {:text text}]
-      (agg/app-atom-command todos todo/create-new id attrs)))
+    (let [id (str "todo-" (Math/random))]
+      (agg/app-atom-command todos todo/create-new id text)))
   (change-text [_ id new-text]
-    (let [attrs {:text new-text}]
-      (agg/app-atom-command todos todo/modify id attrs)))
+    (agg/app-atom-command todos todo/change-text id new-text))
   (mark-done [_ id]
-    (let [attrs {:completed? true}]
-      (agg/app-atom-command todos todo/modify id attrs)))
+    (agg/app-atom-command todos todo/set-completed id true))
   (delete [_ id]
     (agg/app-atom-command todos todo/delete id))
 
