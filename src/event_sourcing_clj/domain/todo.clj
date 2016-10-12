@@ -13,6 +13,7 @@
 (defrecord Created [id text completed?])
 (defrecord TextChanged [id new-text])
 (defrecord CompletedChanged [id completed?])
+(defrecord Deleted [id])
 (defrecord DoneCleared [ids])
 
 (defprotocol TodoCommands
@@ -29,8 +30,7 @@
   (get-todo [_ id])
   )
 
-(declare modify)
-
+(declare my-accept)
 
 (defrecord Todos [store]
 
@@ -45,36 +45,55 @@
   TodoCommands
   (create-new [model id text]
     (when-not (has-todo? model id)
-      (let [todo (map->Todo {:id id
-                             :text text
-                             :completed? false})]
-        [:crud/created todo])))
+      (->Created id text false)))
   (change-text [model id new-text]
-    (modify model id {:text new-text}))
+    (when (has-todo? model id)
+      (->TextChanged id new-text)))
   (set-completed [model id completed?]
-    (modify model id {:completed? completed?}))
+    (when (has-todo? model id)
+      (->CompletedChanged id completed?)))
   (delete [model id]
     (when (has-todo? model id)
-      [:crud/deleted id]))
+      (->Deleted id)))
   (clear-done [model]
     (let [done-ids (->> (all-todos model)
                         (filter :completed?)
                         (map :id))
           done-ids (into #{} done-ids)]
-      [:crud/many-deleted done-ids]))
+      (->DoneCleared done-ids)))
 
   agg/Aggregate
-  (accept [model [evt opts]]
-    (agg/crud-processor model [evt opts]))
+  (accept [model event]
+    (my-accept model event))
   )
 
-(defn- modify
-  "Not quite able to be pulled into aggregate package because of has-todo? could generalize crud queries."
-  [model id attrs]
-  (when (has-todo? model id)
-    ; this map->Todo thing is a hack... need to infer type of thing without having it
-    (let [updates (merge (map->Todo {}) attrs {:id id})]
-      [:crud/modified updates])))
+(defmulti my-accept #(class %2))
+
+(defmethod my-accept Created
+  [model event]
+  (let [id (:id event)
+        todo (map->Todo event)]
+    (assoc-in model [:store id] todo)))
+
+(defmethod my-accept TextChanged
+  [model event]
+  (let [{:keys [id new-text]} event]
+    (assoc-in model [:store id :text] new-text)))
+
+(defmethod my-accept CompletedChanged
+  [model event]
+  (let [{:keys [id completed?]} event]
+    (assoc-in model [:store id :completed?] completed?)))
+
+(defmethod my-accept Deleted
+  [model event]
+  (let [id (:id event)]
+    (update model :store dissoc id)))
+
+(defmethod my-accept DoneCleared
+  [model event]
+  (let [ids (:ids event)]
+    (update model :store #(apply dissoc % ids))))
 
 (defn make-todos []
   (map->Todos {:store {}}))

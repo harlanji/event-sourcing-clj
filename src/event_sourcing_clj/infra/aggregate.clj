@@ -4,10 +4,13 @@
 ; -- infra
 
 (defprotocol Aggregate
-  (accept [_ event]))
+  (accept [model event]))
 
 (defprotocol Entity
   (id [_]))
+
+(defprotocol Command
+  (valid? [_]))
 
 (defn cmd-of [state [cmd _]] cmd)
 

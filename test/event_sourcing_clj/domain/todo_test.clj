@@ -12,7 +12,7 @@
                                 :text "Do it!"
                                 :completed? false})
           event (todo/create-new todos 1 "Do it!")]
-      (is (= event [:crud/created todo]))))
+      (is (= event (todo/->Created 1 "Do it!" false)))))
 
   (testing "We can't create a duplicate todo (by id)"
     (let [todo (todo/map->Todo {:id 1
@@ -33,7 +33,7 @@
           todos (agg/accept todos create-event)
 
           event (todo/set-completed todos 1 true)
-          expected [:crud/modified changed-todo] ; emit whole or partial record (w id merged or separate)? downstream should have history to materialize old values...
+          expected (todo/->CompletedChanged 1 true) ; emit whole or partial record (w id merged or separate)? downstream should have history to materialize old values...
           ]  ; breathing room
       (is (= event expected)) ; could use [_ (is (= ...))] in let, but... let the code smell if test is too long
       (let [todos (agg/accept todos event)
@@ -52,7 +52,7 @@
           todos (agg/accept todos create-event)
 
           event (todo/delete todos 1)
-          expected [:crud/deleted 1]]
+          expected (todo/->Deleted 1)]
       (is (= event expected))))
 
   (testing "We can't delete a todo that doesn't exist"
@@ -69,7 +69,7 @@
 
 
           event (todo/clear-done todos)
-          expected [:crud/many-deleted #{1 3}]]
+          expected (todo/->DoneCleared #{1 3})]
       (is (= event expected))
       ; two step comparison. note: we may want another query method for done.
       (let [todos (agg/accept todos event)]
