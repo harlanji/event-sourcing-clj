@@ -63,9 +63,9 @@
   (testing "We can delete completed todos"
     (let [not-done (todo/map->Todo {:id 2 :text "another thing" :completed? false})
           ; explicitly creating state here instead of using domain methods as usually preferred...
-          todo (todo/map->TodosAggregate {:todos {1 (todo/map->Todo {:id 1 :text "thing" :completed? true})
-                                                   2 not-done
-                                                   3 (todo/map->Todo {:id 3 :text "last one" :completed? true})}})
+          todos (todo/map->Todos {:store {1 (todo/map->Todo {:id 1 :text "thing" :completed? true})
+                                          2 not-done
+                                          3 (todo/map->Todo {:id 3 :text "last one" :completed? true})}})
 
 
           event (todo/clear-done todos)

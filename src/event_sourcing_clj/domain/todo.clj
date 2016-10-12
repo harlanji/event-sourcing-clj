@@ -20,40 +20,62 @@
 
 (declare modify)
 
-(defrecord TodosAggregate
-  [todos]
+; A) shared with view projection
+;    same as B, except within defrecord iteself.
+;    main advantage is shorthand for view fields (transactional consistent).
+; B) one aggregate per app (per module)
+;(extend-type TodosApp
+;  agg/Aggregate
+;  (accept [store [evt opts]]))
+;(extend-type NotesApp
+;  agg/Aggregate
+;  (accept [store [evt opts]]))
+;(extend-type NotesApp
+;  agg/Aggregate
+;  (accept [store [evt opts]]))
+
+; C) all aggregates in one place (central module)
+;(extend-protocol agg/Aggregate
+;  TodosApp
+;  (accept [store [evt opts]])
+;  NotesApp
+;  (accept [store [evt opts]])
+;  CaStoreApp
+;  (accept [store [evt opts]]))
+
+
+(defrecord Todos
+  [store]
 
   ; this would let us do FAST loads... other iface for transduce?
   ;clojure.core.protocols/CollReduce
   ;(coll-reduce [store f1 init] (coment "something with" accept))
 
   agg/Aggregate
-  (accept [store [evt opts]]
+  (accept [todos [evt opts]]
     ; note we do our own dispatch
     (cond
       (= evt :crud/created)
       (let [todo opts]
-        (update store :todos assoc (:id todo) todo))
+        (update todos :store assoc (:id todo) todo))
 
       (= evt :crud/modified)
       (let [changed-todo opts
-            id (:id changed-todo)
-            todos (update todos id merge changed-todo)]
-        (assoc store :todos todos))
+            id (:id changed-todo)]
+        (update todos :store update id merge changed-todo))
 
       (= evt :crud/deleted)
       (let [id opts]
-        (update store :todos dissoc id))
+        (update todos :store dissoc id))
 
       (= evt :crud/many-deleted)
       (let [ids opts
             events (map (fn [id] [:crud/deleted id]) ids)
-            store (reduce agg/accept store events)]
-        store)
+            todos (reduce agg/accept todos events)]
+        todos)
 
 
       ))
-
 
   ; -- domain service
   ; pure + immutable -- no outside API calls, etc (side effects) -- all values provided by app svc
@@ -61,28 +83,28 @@
 
   ; event or nil returned for a command
   TodoCommands
-  (create-new [this id text]
-    (when-not (has-todo? this id)
+  (create-new [todos id text]
+    (when-not (has-todo? todos id)
       (let [todo (map->Todo {:id id
                              :text text
                              :completed? false})]
         [:crud/created todo])))
 
-  (change-text [this id new-text]
-    (modify this id {:text new-text}))
+  (change-text [todos id new-text]
+    (modify todos id {:text new-text}))
 
-  (set-completed [this id completed?]
-    (modify this id {:completed? completed?}))
+  (set-completed [todos id completed?]
+    (modify todos id {:completed? completed?}))
 
-  (delete [this id]
-    (when (has-todo? this id)
+  (delete [todos id]
+    (when (has-todo? todos id)
       [:crud/deleted id]))
 
-  (clear-done [this]
+  (clear-done [todos]
     ; a commnd without explicit intent... ie. we commit to the results of a query.
     ; seems we'd want to query and then delete (delete-many % (map :id (get-done %)) in some way.
     ; otoh this conveys transactional intent.
-    (let [done-ids (into #{} (->> (all-todos this)
+    (let [done-ids (into #{} (->> (all-todos todos)
                                   (filter :completed?)
                                   (map :id)))]
       [:crud/many-deleted done-ids]))
@@ -90,18 +112,13 @@
 
   TodoQueries
   (has-todo? [_ id]
-    (contains? todos id))
+    (contains? store id))
 
   (all-todos [_]
-    (into #{} (vals todos)))
+    (into #{} (vals store)))
 
-  (get-todo [this id]
-    ; fixme slow if first doesn't terminate (transducer style)
-    (->> (all-todos this) ; this is clunky (state vs todos... ambiguous to reader)
-         (filter #(= (:id %) id))
-         (first)))
-
-  )
+  (get-todo [_ id]
+    (get store id)))
 
 
 
@@ -112,4 +129,4 @@
       [:crud/modified updates])))
 
 (defn make-todos []
-  (map->TodosAggregate {:todos {}}))
+  (map->Todos {:store {}}))
