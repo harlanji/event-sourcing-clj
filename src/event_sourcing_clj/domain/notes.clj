@@ -1,4 +1,5 @@
-(ns event-sourcing-clj.domain.notes)
+(ns event-sourcing-clj.domain.notes
+  (:require [event-sourcing-clj.infra.aggregate :as agg]))
 
 
 ; -- model
@@ -22,7 +23,7 @@
 
 ; -- aggregate
 
-(defmulti accept (fn [state [cmd _]] cmd))
+(defmulti accept agg/cmd-of)
 
 (defmethod accept ::note-created
   [state [cmd opts]]

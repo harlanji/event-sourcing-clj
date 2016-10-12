@@ -7,6 +7,8 @@
   (accept [_ [evt opts]]))
 
 
+(defn cmd-of [state [cmd _]] cmd)
+
 (defn app-atom-command
   "A convenience function to update an immutable service in an atom, and return the event (if any)."
   [app-svc-atom svc-fn & args]
