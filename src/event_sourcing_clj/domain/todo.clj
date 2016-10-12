@@ -1,5 +1,5 @@
 (ns event-sourcing-clj.domain.todo
-  (:require [event-sourcing-clj.infra.aggregate :refer [Aggregate]]))
+  (:require [event-sourcing-clj.infra.aggregate :as agg]))
 
 ; -- domain model + commands using defprotocol + defrecord for hinting
 
@@ -27,7 +27,7 @@
   ;clojure.core.protocols/CollReduce
   ;(coll-reduce [store f1 init] (coment "something with" accept))
 
-  Aggregate
+  agg/Aggregate
   (accept [store [evt opts]]
     ; note we do our own dispatch
     (cond
@@ -43,7 +43,16 @@
 
       (= evt :crud/deleted)
       (let [id opts]
-        (update store :todos dissoc id))))
+        (update store :todos dissoc id))
+
+      (= evt :crud/many-deleted)
+      (let [ids opts
+            events (map (fn [id] [:crud/deleted id]) ids)
+            store (reduce agg/accept store events)]
+        store)
+
+
+      ))
 
 
   ; -- domain service
@@ -68,6 +77,15 @@
   (delete [this id]
     (when (has-todo? this id)
       [:crud/deleted id]))
+
+  (clear-done [this]
+    ; a commnd without explicit intent... ie. we commit to the results of a query.
+    ; seems we'd want to query and then delete (delete-many % (map :id (get-done %)) in some way.
+    ; otoh this conveys transactional intent.
+    (let [done-ids (into #{} (->> (all-todos this)
+                                  (filter :completed?)
+                                  (map :id)))]
+      [:crud/many-deleted done-ids]))
 
 
   TodoQueries

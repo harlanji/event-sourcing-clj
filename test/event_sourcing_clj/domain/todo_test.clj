@@ -58,6 +58,16 @@
   (testing "We can't delete a todo that doesn't exist"
     (let [event (todo/delete todos 1)
           expected nil]
+      (is (= event expected))))
+
+  (testing "We can delete completed todos"
+    (let [todos (todo/map->TodosAggregate {:todos {1 (todo/map->Todo {:id 1 :text "thing" :completed? true})
+                                                   2 (todo/map->Todo {:id 2 :text "another thing" :completed? false})
+                                                   3 (todo/map->Todo {:id 3 :text "last one" :completed? true})}})
+
+
+          event (todo/clear-done todos)
+          expected [:crud/many-deleted #{1 3}]]
       (is (= event expected)))))
 
 (deftest todos-read
