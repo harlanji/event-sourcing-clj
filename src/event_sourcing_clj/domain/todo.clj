@@ -47,39 +47,18 @@
 (defrecord Todos
   [store]
 
+
+  ; -- domain service
+  ; pure + immutable -- no outside API calls, etc (side effects) -- all values provided by app svc
+
+
   ; this would let us do FAST loads... other iface for transduce?
   ;clojure.core.protocols/CollReduce
   ;(coll-reduce [store f1 init] (coment "something with" accept))
 
   agg/Aggregate
   (accept [todos [evt opts]]
-    ; note we do our own dispatch
-    (cond
-      (= evt :crud/created)
-      (let [todo opts]
-        (update todos :store assoc (:id todo) todo))
-
-      (= evt :crud/modified)
-      (let [changed-todo opts
-            id (:id changed-todo)]
-        (update todos :store update id merge changed-todo))
-
-      (= evt :crud/deleted)
-      (let [id opts]
-        (update todos :store dissoc id))
-
-      (= evt :crud/many-deleted)
-      (let [ids opts
-            events (map (fn [id] [:crud/deleted id]) ids)
-            todos (reduce agg/accept todos events)]
-        todos)
-
-
-      ))
-
-  ; -- domain service
-  ; pure + immutable -- no outside API calls, etc (side effects) -- all values provided by app svc
-
+    (agg/crud-processor todos [evt opts]))
 
   ; event or nil returned for a command
   TodoCommands
