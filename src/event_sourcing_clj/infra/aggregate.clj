@@ -10,7 +10,7 @@
   (id [_]))
 
 (defprotocol Command
-  (valid? [_]))
+  (valid? [_ model]))
 
 (defn cmd-of [state [cmd _]] cmd)
 
