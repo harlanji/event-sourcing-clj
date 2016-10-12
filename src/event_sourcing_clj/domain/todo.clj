@@ -12,6 +12,7 @@
   )
 
 (defprotocol TodoQueries
+  (has-todo? [_ id])
   (all-todos [_])
   (get-todo [_ id]))
 
@@ -51,25 +52,28 @@
 
   ; event or nil returned for a command
   TodoCommands
-  (create-new [_ id text]
-    (when-not (contains? todos id)
+  (create-new [this id text]
+    (when-not (has-todo? this id)
       (let [todo (map->Todo {:id id
                              :text text
                              :completed? false})]
         [:crud/created todo])))
 
-  (change-text [_ id new-text]
-    (modify todos id {:text new-text}))
+  (change-text [this id new-text]
+    (modify this id {:text new-text}))
 
-  (set-completed [_ id completed?]
-    (modify todos id {:completed? completed?}))
+  (set-completed [this id completed?]
+    (modify this id {:completed? completed?}))
 
-  (delete [_ id]
-    (when (contains? todos id)
+  (delete [this id]
+    (when (has-todo? this id)
       [:crud/deleted id]))
 
 
   TodoQueries
+  (has-todo? [_ id]
+    (contains? todos id))
+
   (all-todos [_]
     (into #{} (vals todos)))
 
@@ -83,8 +87,8 @@
 
 
 
-(defn- modify [todos id attrs]
-  (when (contains? todos id)
+(defn- modify [todo-queries id attrs]
+  (when (has-todo? todo-queries id)
     ; this map->Todo thing is a hack... need to infer type of thing without having it
     (let [updates (merge (map->Todo {}) attrs {:id id})]
       [:crud/modified updates])))

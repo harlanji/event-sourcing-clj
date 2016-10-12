@@ -11,36 +11,16 @@ Follows roughly the Appendix A of Vernon's Implementing DDD book.
 * `app.*` Application-level representation of domain model--in memory in our case.
 * `core` The application.
 
+## Ideas
 
-## Installation
 
-Download from http://example.com/FIXME.
+Aggregate = processors + view projection in a transactional boundry, first processor wins (one event per command)
 
-## Usage
 
-FIXME: explanation
+## Design Notes
 
-    $ java -jar d2f-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2016 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+* projection = protocol(s) with pure query functions
+* processor = agg/Aggregate handling with `(accept [state [evt opts]])` dispatching on `evt` (can we do better?)
+  * relative to self view projection object in defrecord (transactional consistentcy expressed via fields--inconvient update return)
+  * the notes aggregate shows defmulti based accept dispatch
+* currently no validation messages, simply nil returned. could emit errors on a side channel or inline with a reserved ns
