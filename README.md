@@ -40,6 +40,9 @@ Continues / zooms in on some earlier work: [`harlanji/clojureseed`](https://gith
 You write the descriptions of these things in pure functions to a familiar / standard API
 and then the build or runtime system can intelligently recompose the logic to run with scale.
 
+Datatypes and construction of expressions can communicate intent like body language. From this we 
+can infer transactional boundaries and possibly other things for recomposition.
+
 It uses monitoring to optimize runtime conditions, like an online query planner + optimizer.
 
 `Compose(Config, Code, Data, Metrics)`
