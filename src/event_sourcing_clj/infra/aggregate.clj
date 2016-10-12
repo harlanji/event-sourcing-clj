@@ -4,8 +4,10 @@
 ; -- infra
 
 (defprotocol Aggregate
-  (accept [_ [evt opts]]))
+  (accept [_ event]))
 
+(defprotocol Entity
+  (id [_]))
 
 (defn cmd-of [state [cmd _]] cmd)
 

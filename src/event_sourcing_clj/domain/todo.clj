@@ -1,7 +1,19 @@
 (ns event-sourcing-clj.domain.todo
   (:require [event-sourcing-clj.infra.aggregate :as agg]))
 
-; -- domain model + commands using defprotocol + defrecord for hinting
+; -- value objects
+(deftype TodoId [id])
+
+; -- entities
+(defrecord Todo [id text completed?]
+  agg/Entity
+  (id [_] (->TodoId id)))
+
+; -- events
+(defrecord Created [id text completed?])
+(defrecord TextChanged [id new-text])
+(defrecord CompletedChanged [id completed?])
+(defrecord DoneCleared [ids])
 
 (defprotocol TodoCommands
   (create-new [_ id text])
@@ -14,95 +26,52 @@
 (defprotocol TodoQueries
   (has-todo? [_ id])
   (all-todos [_])
-  (get-todo [_ id]))
-
-(defrecord Todo [id text completed?])
+  (get-todo [_ id])
+  )
 
 (declare modify)
 
-; A) shared with view projection
-;    same as B, except within defrecord iteself.
-;    main advantage is shorthand for view fields (transactional consistent).
-; B) one aggregate per app (per module)
-;(extend-type TodosApp
-;  agg/Aggregate
-;  (accept [store [evt opts]]))
-;(extend-type NotesApp
-;  agg/Aggregate
-;  (accept [store [evt opts]]))
-;(extend-type NotesApp
-;  agg/Aggregate
-;  (accept [store [evt opts]]))
 
-; C) all aggregates in one place (central module)
-;(extend-protocol agg/Aggregate
-;  TodosApp
-;  (accept [store [evt opts]])
-;  NotesApp
-;  (accept [store [evt opts]])
-;  CaStoreApp
-;  (accept [store [evt opts]]))
+(defrecord Todos [store]
 
+  TodoQueries
+  (has-todo? [model id]
+    (contains? store id))
+  (all-todos [model]
+    (into #{} (vals store)))
+  (get-todo [model id]
+    (get store id))
 
-(defrecord Todos
-  [store]
-
-
-  ; -- domain service
-  ; pure + immutable -- no outside API calls, etc (side effects) -- all values provided by app svc
-
-
-  ; this would let us do FAST loads... other iface for transduce?
-  ;clojure.core.protocols/CollReduce
-  ;(coll-reduce [store f1 init] (coment "something with" accept))
-
-  agg/Aggregate
-  (accept [todos [evt opts]]
-    (agg/crud-processor todos [evt opts]))
-
-  ; event or nil returned for a command
   TodoCommands
-  (create-new [todos id text]
-    (when-not (has-todo? todos id)
+  (create-new [model id text]
+    (when-not (has-todo? model id)
       (let [todo (map->Todo {:id id
                              :text text
                              :completed? false})]
         [:crud/created todo])))
-
-  (change-text [todos id new-text]
-    (modify todos id {:text new-text}))
-
-  (set-completed [todos id completed?]
-    (modify todos id {:completed? completed?}))
-
-  (delete [todos id]
-    (when (has-todo? todos id)
+  (change-text [model id new-text]
+    (modify model id {:text new-text}))
+  (set-completed [model id completed?]
+    (modify model id {:completed? completed?}))
+  (delete [model id]
+    (when (has-todo? model id)
       [:crud/deleted id]))
-
-  (clear-done [todos]
-    ; a commnd without explicit intent... ie. we commit to the results of a query.
-    ; seems we'd want to query and then delete (delete-many % (map :id (get-done %)) in some way.
-    ; otoh this conveys transactional intent.
-    (let [done-ids (into #{} (->> (all-todos todos)
-                                  (filter :completed?)
-                                  (map :id)))]
+  (clear-done [model]
+    (let [done-ids (->> (all-todos model)
+                        (filter :completed?)
+                        (map :id))
+          done-ids (into #{} done-ids)]
       [:crud/many-deleted done-ids]))
 
+  agg/Aggregate
+  (accept [model [evt opts]]
+    (agg/crud-processor model [evt opts]))
+  )
 
-  TodoQueries
-  (has-todo? [_ id]
-    (contains? store id))
-
-  (all-todos [_]
-    (into #{} (vals store)))
-
-  (get-todo [_ id]
-    (get store id)))
-
-
-
-(defn- modify [todo-queries id attrs]
-  (when (has-todo? todo-queries id)
+(defn- modify
+  "Not quite able to be pulled into aggregate package because of has-todo? could generalize crud queries."
+  [model id attrs]
+  (when (has-todo? model id)
     ; this map->Todo thing is a hack... need to infer type of thing without having it
     (let [updates (merge (map->Todo {}) attrs {:id id})]
       [:crud/modified updates])))
