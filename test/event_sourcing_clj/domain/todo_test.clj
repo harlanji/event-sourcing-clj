@@ -61,14 +61,19 @@
       (is (= event expected))))
 
   (testing "We can delete completed todos"
-    (let [todos (todo/map->TodosAggregate {:todos {1 (todo/map->Todo {:id 1 :text "thing" :completed? true})
-                                                   2 (todo/map->Todo {:id 2 :text "another thing" :completed? false})
+    (let [not-done (todo/map->Todo {:id 2 :text "another thing" :completed? false})
+          ; explicitly creating state here instead of using domain methods as usually preferred...
+          todo (todo/map->TodosAggregate {:todos {1 (todo/map->Todo {:id 1 :text "thing" :completed? true})
+                                                   2 not-done
                                                    3 (todo/map->Todo {:id 3 :text "last one" :completed? true})}})
 
 
           event (todo/clear-done todos)
           expected [:crud/many-deleted #{1 3}]]
-      (is (= event expected)))))
+      (is (= event expected))
+      ; two step comparison. note: we may want another query method for done.
+      (let [todos (agg/accept todos event)]
+        (is (= #{not-done} (todo/all-todos todos)))))))
 
 (deftest todos-read
   (testing "We find read a todo we created"
