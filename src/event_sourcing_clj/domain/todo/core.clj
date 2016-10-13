@@ -1,5 +1,6 @@
-(ns event-sourcing-clj.domain.todo
+(ns event-sourcing-clj.domain.todo.core
   (:require [event-sourcing-clj.infra.aggregate :refer [Proposer propose Acceptor accept] :as agg]))
+
 
 ; -- value objects
 (deftype TodoId [id])
@@ -9,20 +10,6 @@
   agg/Entity
   (id [_] (->TodoId id)))
 
-; -- events
-(declare ->Created
-         ->TextChanged
-         ->CompletedChanged
-         ->Deleted
-         ->DoneCleared)
-
-; -- commands (requests)
-(declare ->CreateNew
-         ->CreateCompleted ; second create signature
-         ->ChangeText
-         ->ChangeCompleted
-         ->Delete
-         ->ClearDone)
 
 (defprotocol TodoQueries
   (has-todo? [_ id])
@@ -31,37 +18,11 @@
 
 (defprotocol TodoCommands
   (create-new [_ id text])
+  (create-complete   [_ id text])
   (change-text [_ id new-text])
   (change-completed [_ id completed?])
   (delete [_ id])
   (clear-done [_]))
-
-
-; read model / projection
-(defrecord Todos [store]
-  TodoQueries
-  (has-todo? [model id]
-    (contains? store id))
-  (all-todos [model]
-    (into #{} (vals store)))
-  (get-todo [model id]
-    (get store id))
-
-  ; interface for editor completion... usefulness can be debated
-  ; could be useful for MAPPING VIEW PROJECTION
-  TodoCommands
-  (create-new [model id text]
-    (propose (->CreateNew id text) model))
-  (create-completed [model id text]
-    (propose (->CreateCompleted id text) model))
-  (change-text [model id new-text]
-    (propose (->ChangeText id new-text) model))
-  (change-completed [model id completed?]
-    (propose (->ChangeCompleted id completed?) model))
-  (delete [model id]
-    (propose (->Delete id) model))
-  (clear-done [model]
-    (propose (->ClearDone) model)))
 
 
 ; -- create a new todo
@@ -69,8 +30,8 @@
 (defrecord Created [id text completed?]
   Acceptor
   (accept [_ model]
-          (let [todo (->Todo id text completed?)]
-            (assoc-in model [:store id] todo))))
+    (let [todo (->Todo id text completed?)]
+      (assoc-in model [:store id] todo))))
 
 (defrecord CreateNew [id text]
   Proposer
@@ -149,8 +110,3 @@
           done-ids (into #{} done-ids)]
       (->DoneCleared done-ids))))
 
-
-; -- make a service
-
-(defn make-todos []
-  (map->Todos {:store {}}))

@@ -1,10 +1,12 @@
 (ns event-sourcing-clj.domain.todo_test
   (:require [clojure.test :refer :all]
-            [event-sourcing-clj.domain.todo :as todo]
+            [event-sourcing-clj.domain.todo.core :as todo]
+            [event-sourcing-clj.domain.todo.model :refer [make-todos map->Todos]]
+
             [event-sourcing-clj.infra.aggregate :as agg]))
 
 ; no need to do before-each since this is immutable :)
-(def todos (todo/make-todos))
+(def todos (make-todos))
 
 (deftest todos-create
   (testing "We can create a new todo"
@@ -55,7 +57,7 @@
   (testing "We can delete completed todos"
     (let [not-done (todo/map->Todo {:id 2 :text "another thing" :completed? false})
           ; explicitly creating state here instead of using domain methods as usually preferred...
-          todos (todo/map->Todos {:store {1 (todo/map->Todo {:id 1 :text "thing" :completed? true})
+          todos (map->Todos {:store {1 (todo/map->Todo {:id 1 :text "thing" :completed? true})
                                           2 not-done
                                           3 (todo/map->Todo {:id 3 :text "last one" :completed? true})}})
 
