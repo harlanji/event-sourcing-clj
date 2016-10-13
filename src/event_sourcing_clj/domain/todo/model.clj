@@ -1,6 +1,6 @@
 (ns event-sourcing-clj.domain.todo.model
   (:require [event-sourcing-clj.domain.todo.core :refer :all]
-            [event-sourcing-clj.infra.aggregate :refer [propose]]))
+            [event-sourcing-clj.infra.aggregate :refer [propose accept Aggregate]]))
 
 (defrecord Todos [store]
   Read
@@ -33,7 +33,11 @@
   (delete [model id]
     (propose (->Delete id) model))
   (clear-done [model]
-    (propose (->ClearDone) model)))
+    (propose (->ClearDone) model))
+
+  Aggregate
+  (aggregate [model event]
+    (accept event model)))
 
 (defn make-todos []
   (map->Todos {:store {}}))
