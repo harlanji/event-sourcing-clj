@@ -16,15 +16,15 @@
   CaStoreApp
   (create-key [_ pub-key]
     (when-let [event (castore/create-key @castore pub-key)]
-      (swap! castore agg/accept event)
+      (swap! castore agg/aggregate event)
       event))
   (sign-key [_ pub-key]
     (when-let [event (castore/sign-key @castore pub-key)]
-      (swap! castore agg/accept event)
+      (swap! castore agg/aggregate event)
       event))
   (revoke-key [_ pub-key]
     (when-let [event (castore/revoke-key @castore pub-key)]
-      (swap! castore agg/accept event)
+      (swap! castore agg/aggregate event)
       event)))
 
 ; idea: macro for generic single domain service with atom repo, as well as core.async + kv store

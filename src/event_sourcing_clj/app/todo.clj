@@ -1,5 +1,6 @@
 (ns event-sourcing-clj.app.todo
-  (:require [event-sourcing-clj.domain.todo :as todo]
+  (:require [event-sourcing-clj.domain.todo.core :as todo]
+            [event-sourcing-clj.domain.todo.model :refer [make-todos]]
             [event-sourcing-clj.infra.aggregate :as agg]
             ))
 
@@ -7,7 +8,7 @@
   (create-todo [_ text])
   (change-text [_ id new-text])
   (mark-done [_ id])
-  (delete [_ id])
+  (delete-todo [_ id])
   ;(clear-done [_])
 
   (all-todos [_])
@@ -30,7 +31,7 @@
     (agg/app-atom-command todos todo/change-text id new-text))
   (mark-done [_ id]
     (agg/app-atom-command todos todo/change-completed id true))
-  (delete [_ id]
+  (delete-todo [_ id]
     (agg/app-atom-command todos todo/delete id))
 
   (all-todos [_]
@@ -44,5 +45,5 @@
 
 
 (defn todo-service []
-  (let [todos (atom (todo/make-todos))]
+  (let [todos (atom (make-todos))]
     (map->TodosApp {:todos todos})))

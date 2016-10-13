@@ -16,7 +16,7 @@
   ;(coll-reduce [store f1 init] (coment "something with" accept))
 
   Aggregate
-  (accept [store [evt opts]]
+  (aggregate [store [evt opts]]
     ; note we do our own dispatch
     (cond
       (= evt ::key-created)
