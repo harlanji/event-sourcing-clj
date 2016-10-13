@@ -12,6 +12,16 @@
   (get-todo [model id]
     (get store id))
 
+  TodoChangers
+  (create-todo [model id todo]
+    (assoc-in model [:store id] todo))
+  (merge-todo [model id attrs]
+    (update-in model [:store id] merge attrs))
+  (delete-todo [model id]
+    (update model :store dissoc id))
+  (clear-done [model done-ids]
+    (update model :store #(apply dissoc % done-ids)))
+
   ; interface for editor completion... usefulness can be debated
   ; could be useful for MAPPING VIEW PROJECTION
   TodoCommands

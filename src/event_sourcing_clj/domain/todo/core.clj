@@ -25,13 +25,19 @@
   (clear-done [_]))
 
 
+(defprotocol TodoChangers
+  (create-todo [_ id todo])
+  (merge-todo [_ id attrs])
+  (delete-todo [_ id])
+  (clear-done [_ done-ids]))
+
 ; -- create a new todo
 
 (defrecord Created [id text completed?]
   Acceptor
   (accept [_ model]
     (let [todo (->Todo id text completed?)]
-      (assoc-in model [:store id] todo))))
+      (create-todo model id todo))))
 
 (defrecord CreateNew [id text]
   Proposer
@@ -52,7 +58,7 @@
 (defrecord TextChanged [id new-text]
   Acceptor
   (accept [_ model]
-    (assoc-in model [:store id :text] new-text)))
+    (merge-todo model id (map->Todo {:text new-text}))))
 
 
 (defrecord ChangeText [id new-text]
@@ -66,7 +72,7 @@
 (defrecord CompletedChanged [id completed?]
   Acceptor
   (accept [_ model]
-    (assoc-in model [:store id :completed?] completed?)))
+    (merge-todo model id (map->Todo {:completed? completed?}))))
 
 
 (defrecord ChangeCompleted [id completed?]
@@ -82,7 +88,7 @@
 (defrecord Deleted [id]
   Acceptor
   (accept [_ model]
-    (update model :store dissoc id)))
+    (delete-todo model id)))
 
 
 (defrecord Delete [id]
@@ -95,10 +101,10 @@
 
 ; -- clear done todos
 
-(defrecord DoneCleared [ids]
+(defrecord DoneCleared [done-ids]
   Acceptor
   (accept [_ model]
-    (update model :store #(apply dissoc % ids))))
+    (clear-done model done-ids)))
 
 
 (defrecord ClearDone []
