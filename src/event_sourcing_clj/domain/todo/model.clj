@@ -2,29 +2,26 @@
   (:require [event-sourcing-clj.domain.todo.core :refer :all]
             [event-sourcing-clj.infra.aggregate :refer [propose]]))
 
-; read model / projection
 (defrecord Todos [store]
-  TodoQueries
-  (has-todo? [model id]
+  Read
+  (has-todo? [_ id]
     (contains? store id))
-  (all-todos [model]
+  (all-todos [_]
     (into #{} (vals store)))
-  (get-todo [model id]
+  (get-todo [_ id]
     (get store id))
 
-  TodoChangers
+  Write
   (create-todo [model id todo]
     (assoc-in model [:store id] todo))
   (merge-todo [model id attrs]
     (update-in model [:store id] merge attrs))
   (delete-todo [model id]
     (update model :store dissoc id))
-  (clear-done [model done-ids]
+  (remove-done [model done-ids]
     (update model :store #(apply dissoc % done-ids)))
 
-  ; interface for editor completion... usefulness can be debated
-  ; could be useful for MAPPING VIEW PROJECTION
-  TodoCommands
+  Request
   (create-new [model id text]
     (propose (->CreateNew id text) model))
   (create-complete [model id text]
@@ -37,7 +34,6 @@
     (propose (->Delete id) model))
   (clear-done [model]
     (propose (->ClearDone) model)))
-
 
 (defn make-todos []
   (map->Todos {:store {}}))

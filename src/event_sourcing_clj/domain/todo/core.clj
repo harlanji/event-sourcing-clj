@@ -1,5 +1,7 @@
 (ns event-sourcing-clj.domain.todo.core
-  (:require [event-sourcing-clj.infra.aggregate :refer [Proposer propose Acceptor accept] :as agg]))
+  (:require [event-sourcing-clj.infra.aggregate
+             :refer [Proposer propose Acceptor accept]
+             :as agg]))
 
 
 ; -- value objects
@@ -10,13 +12,19 @@
   agg/Entity
   (id [_] (->TodoId id)))
 
-
-(defprotocol TodoQueries
+; -- model / projection interfaces
+(defprotocol Read
   (has-todo? [_ id])
   (all-todos [_])
   (get-todo [_ id]))
 
-(defprotocol TodoCommands
+(defprotocol Write
+  (create-todo [_ id todo])
+  (merge-todo [_ id attrs])
+  (delete-todo [_ id])
+  (remove-done [_ done-ids]))
+
+(defprotocol Request
   (create-new [_ id text])
   (create-complete   [_ id text])
   (change-text [_ id new-text])
@@ -24,12 +32,7 @@
   (delete [_ id])
   (clear-done [_]))
 
-
-(defprotocol TodoChangers
-  (create-todo [_ id todo])
-  (merge-todo [_ id attrs])
-  (delete-todo [_ id])
-  (clear-done [_ done-ids]))
+; -----------------------------------------------------------------------------
 
 ; -- create a new todo
 
@@ -104,7 +107,7 @@
 (defrecord DoneCleared [done-ids]
   Acceptor
   (accept [_ model]
-    (clear-done model done-ids)))
+    (remove-done model done-ids)))
 
 
 (defrecord ClearDone []
