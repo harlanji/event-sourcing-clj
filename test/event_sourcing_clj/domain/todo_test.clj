@@ -8,47 +8,47 @@
 
 (deftest todos-create
   (testing "We can create a new todo"
-    (let [event (agg/valid? (todo/->CreateNew 1 "Do it!") todos)]
+    (let [event (agg/propose (todo/->CreateNew 1 "Do it!") todos)]
       (is (= event (todo/->Created 1 "Do it!" false)))))
 
   (testing "We can't create a duplicate todo (by id)"
-    (let [event1 (agg/valid? (todo/->CreateNew 1 "Do it!") todos)
-          todos (agg/accept todos event1)
-          event2 (agg/valid? (todo/->CreateNew 1 "Do it!") todos)]
+    (let [event1 (agg/propose (todo/->CreateNew 1 "Do it!") todos)
+          todos (agg/accept event1 todos)
+          event2 (agg/propose (todo/->CreateNew 1 "Do it!") todos)]
       (is (= event2 nil)))))
 
 (deftest todos-update
   (testing "We can modify a todo (by id) multiple times"
     (let [; use domain methods >> setting up state manually
           ; mutatation via shadowing
-          create-event (agg/valid? (todo/->CreateNew 1 "Do it!") todos)
-          todos (agg/accept todos create-event)
+          create-event (agg/propose (todo/->CreateNew 1 "Do it!") todos)
+          todos (agg/accept create-event todos)
 
-          event (agg/valid? (todo/->ChangeCompleted 1 true) todos)
+          event (agg/propose (todo/->ChangeCompleted 1 true) todos)
           expected (todo/->CompletedChanged 1 true) ; emit whole or partial record (w id merged or separate)? downstream should have history to materialize old values...
           ]  ; breathing room
       (is (= event expected)) ; could use [_ (is (= ...))] in let, but... let the code smell if test is too long
-      (let [todos (agg/accept todos event)
-            event (agg/valid? (todo/->ChangeCompleted 1 true) todos)]
+      (let [todos (agg/accept event todos)
+            event (agg/propose (todo/->ChangeCompleted 1 true) todos)]
         (is (= event expected)) ; same expected, we don't check for dedupes or versions
         )))
 
   (testing "We can't modify a todo that doesn't exist"
-    (let [event (agg/valid? (todo/->ChangeCompleted 1 true) todos)
+    (let [event (agg/propose (todo/->ChangeCompleted 1 true) todos)
           expected nil]
       (is (= event expected)))))
 
 (deftest todos-delete
   (testing "We can delete a todo"
-    (let [create-event (agg/valid? (todo/->CreateNew 1 "Do it!") todos)
-          todos (agg/accept todos create-event)
+    (let [create-event (agg/propose (todo/->CreateNew 1 "Do it!") todos)
+          todos (agg/accept create-event todos)
 
-          event (agg/valid? (todo/->Delete 1) todos)
+          event (agg/propose (todo/->Delete 1) todos)
           expected (todo/->Deleted 1)]
       (is (= event expected))))
 
   (testing "We can't delete a todo that doesn't exist"
-    (let [event (agg/valid? (todo/->Delete 1) todos)
+    (let [event (agg/propose (todo/->Delete 1) todos)
           expected nil]
       (is (= event expected))))
 
@@ -60,17 +60,17 @@
                                           3 (todo/map->Todo {:id 3 :text "last one" :completed? true})}})
 
 
-          event (agg/valid? (todo/->ClearDone) todos)
+          event (agg/propose (todo/->ClearDone) todos)
           expected (todo/->DoneCleared #{1 3})]
       (is (= event expected))
       ; two step comparison. note: we may want another query method for done.
-      (let [todos (agg/accept todos event)]
+      (let [todos (agg/accept event todos)]
         (is (= #{not-done} (todo/all-todos todos)))))))
 
 (deftest todos-read
   (testing "We find read a todo we created"
-    (let [create-event (agg/valid? (todo/->CreateNew 1 "Do it!") todos)
-          todos (agg/accept todos create-event)
+    (let [create-event (agg/propose (todo/->CreateNew 1 "Do it!") todos)
+          todos (agg/accept create-event todos)
 
           found(todo/get-todo todos 1)
           expected (todo/map->Todo {:id 1
@@ -85,11 +85,11 @@
 
 
   (testing "We can read all todos that we created"
-    (let [create-event1 (agg/valid? (todo/->CreateNew 1 "Do it!") todos)
-          todos (agg/accept todos create-event1)
+    (let [create-event1 (agg/propose (todo/->CreateNew 1 "Do it!") todos)
+          todos (agg/accept create-event1 todos)
 
-          create-event2 (agg/valid? (todo/->CreateNew 2 "Do more of it!") todos)
-          todos (agg/accept todos create-event2)
+          create-event2 (agg/propose (todo/->CreateNew 2 "Do more of it!") todos)
+          todos (agg/accept create-event2 todos)
 
           found (todo/all-todos todos)
           expected #{(todo/map->Todo {:id 1

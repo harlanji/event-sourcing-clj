@@ -29,7 +29,7 @@
   (change-text [_ id new-text]
     (agg/app-atom-command todos todo/change-text id new-text))
   (mark-done [_ id]
-    (agg/app-atom-command todos todo/set-completed id true))
+    (agg/app-atom-command todos todo/change-completed id true))
   (delete [_ id]
     (agg/app-atom-command todos todo/delete id))
 
@@ -44,5 +44,5 @@
 
 
 (defn todo-service []
-  (let [todos (atom (todo/map->TodosAggregate {}))]
+  (let [todos (atom (todo/make-todos))]
     (map->TodosApp {:todos todos})))

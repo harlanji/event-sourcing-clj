@@ -1,5 +1,5 @@
 (ns event-sourcing-clj.domain.todo
-  (:require [event-sourcing-clj.infra.aggregate :as agg]))
+  (:require [event-sourcing-clj.infra.aggregate :refer [Proposer propose Acceptor accept] :as agg]))
 
 ; -- value objects
 (deftype TodoId [id])
@@ -10,18 +10,32 @@
   (id [_] (->TodoId id)))
 
 ; -- events
-(defrecord Created [id text completed?])
-(defrecord TextChanged [id new-text])
-(defrecord CompletedChanged [id completed?])
-(defrecord Deleted [id])
-(defrecord DoneCleared [ids])
+(declare ->Created
+         ->TextChanged
+         ->CompletedChanged
+         ->Deleted
+         ->DoneCleared)
 
-; queries
+; -- commands (requests)
+(declare ->CreateNew
+         ->CreateCompleted ; second create signature
+         ->ChangeText
+         ->ChangeCompleted
+         ->Delete
+         ->ClearDone)
+
 (defprotocol TodoQueries
   (has-todo? [_ id])
   (all-todos [_])
-  (get-todo [_ id])
-  )
+  (get-todo [_ id]))
+
+(defprotocol TodoCommands
+  (create-new [_ id text])
+  (change-text [_ id new-text])
+  (change-completed [_ id completed?])
+  (delete [_ id])
+  (clear-done [_]))
+
 
 ; read model / projection
 (defrecord Todos [store]
@@ -31,93 +45,110 @@
   (all-todos [model]
     (into #{} (vals store)))
   (get-todo [model id]
-    (get store id)))
+    (get store id))
 
-
-; -- validate + accept pairs
-(defmulti my-accept #(class %2))
-(extend-type Todos
-  agg/Aggregate
-  (accept [model event]
-    (my-accept model event)))
+  ; interface for editor completion... usefulness can be debated
+  ; could be useful for MAPPING VIEW PROJECTION
+  TodoCommands
+  (create-new [model id text]
+    (propose (->CreateNew id text) model))
+  (create-completed [model id text]
+    (propose (->CreateCompleted id text) model))
+  (change-text [model id new-text]
+    (propose (->ChangeText id new-text) model))
+  (change-completed [model id completed?]
+    (propose (->ChangeCompleted id completed?) model))
+  (delete [model id]
+    (propose (->Delete id) model))
+  (clear-done [model]
+    (propose (->ClearDone) model)))
 
 
 ; -- create a new todo
 
-(defrecord CreateNew [id
-                      text]
-  agg/Command
-  (valid? [_ model]
+(defrecord Created [id text completed?]
+  Acceptor
+  (accept [_ model]
+          (let [todo (->Todo id text completed?)]
+            (assoc-in model [:store id] todo))))
+
+(defrecord CreateNew [id text]
+  Proposer
+  (propose [_ model]
     (when-not (has-todo? model id)
       (->Created id text false))))
 
-(defmethod my-accept Created
-  [model event]
-  (let [id (:id event)
-        todo (map->Todo event)]
-    (assoc-in model [:store id] todo)))
+; example use case... multiple proposers for one event
+(defrecord CreateComplete [id text]
+  Proposer
+  (propose [_ model]
+    (when-not (has-todo? model id)
+      (->Created id text true))))
+
 
 ; -- change text of a todo
 
-(defrecord ChangeText [id
-                       new-text]
-  agg/Command
-  (valid? [_ model]
+(defrecord TextChanged [id new-text]
+  Acceptor
+  (accept [_ model]
+    (assoc-in model [:store id :text] new-text)))
+
+
+(defrecord ChangeText [id new-text]
+  Proposer
+  (propose [_ model]
     (when (has-todo? model id)
       (->TextChanged id new-text))))
 
-
-(defmethod my-accept TextChanged
-  [model event]
-  (let [{:keys [id new-text]} event]
-    (assoc-in model [:store id :text] new-text)))
-
 ; -- change completed status of a todo
 
-(defrecord ChangeCompleted [id
-                            completed?]
-  agg/Command
-  (valid? [_ model]
+(defrecord CompletedChanged [id completed?]
+  Acceptor
+  (accept [_ model]
+    (assoc-in model [:store id :completed?] completed?)))
+
+
+(defrecord ChangeCompleted [id completed?]
+  Proposer
+  (propose [_ model]
     (when (has-todo? model id)
       (->CompletedChanged id completed?))))
 
 
-(defmethod my-accept CompletedChanged
-  [model event]
-  (let [{:keys [id completed?]} event]
-    (assoc-in model [:store id :completed?] completed?)))
-
 
 ; -- delete a todo
 
+(defrecord Deleted [id]
+  Acceptor
+  (accept [_ model]
+    (update model :store dissoc id)))
+
+
 (defrecord Delete [id]
-  agg/Command
-  (valid? [_ model]
+  Proposer
+  (propose [_ model]
     (when (has-todo? model id)
       (->Deleted id))))
 
-(defmethod my-accept Deleted
-  [model event]
-  (let [id (:id event)]
-    (update model :store dissoc id)))
 
 
 ; -- clear done todos
 
+(defrecord DoneCleared [ids]
+  Acceptor
+  (accept [_ model]
+    (update model :store #(apply dissoc % ids))))
+
+
 (defrecord ClearDone []
-  agg/Command
-  (valid? [_ model]
+  Proposer
+  (propose [_ model]
     (let [done-ids (->> (all-todos model)
                         (filter :completed?)
                         (map :id))
           done-ids (into #{} done-ids)]
       (->DoneCleared done-ids))))
 
-
-(defmethod my-accept DoneCleared
-  [model event]
-  (let [ids (:ids event)]
-    (update model :store #(apply dissoc % ids))))
 
 ; -- make a service
 

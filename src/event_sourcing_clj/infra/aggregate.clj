@@ -4,13 +4,17 @@
 ; -- infra
 
 (defprotocol Aggregate
-  (accept [model event]))
+  (accept2 [model event]))
 
 (defprotocol Entity
   (id [_]))
 
 (defprotocol Command
   (valid? [_ model]))
+
+(defprotocol Proposer (propose [_ model]))
+(defprotocol Acceptor (accept [_ model]))
+
 
 (defn cmd-of [state [cmd _]] cmd)
 
@@ -19,7 +23,7 @@
   [app-svc-atom svc-fn & args]
   ; could make this transactional with fancy update function
   (when-let [event (apply svc-fn @app-svc-atom args)]
-    (swap! app-svc-atom accept event)
+    (swap! app-svc-atom accept2 event)
     event))
 
 
@@ -41,5 +45,5 @@
 (defmethod crud-processor :crud/many-deleted [todos [evt opts]]
   (let [ids opts
         events (map (fn [id] [:crud/deleted id]) ids)
-        todos (reduce accept todos events)]
+        todos (reduce accept2 todos events)]
     todos))
