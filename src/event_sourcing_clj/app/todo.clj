@@ -2,7 +2,10 @@
   (:require [event-sourcing-clj.domain.todo.core :as todo]
             [event-sourcing-clj.domain.todo.model :refer [make-todos]]
             [event-sourcing-clj.infra.aggregate :as agg]
+            [avout.core :as avout]
             ))
+
+(def avout-client (avout/connect "127.0.0.1"))
 
 (defprotocol TodoAppCommands
   (create-todo [_ text])
@@ -21,7 +24,7 @@
 ; note some domain logic has leaked into here... change-text + mark-down
 ; might be another semantic smell.. several things using the same model method signature
 (defrecord TodosApp
-  [todos]
+  [todos events-chan]
 
   TodoAppCommands
   (create-todo [_ text]
@@ -39,11 +42,10 @@
   (get-todo [_ id]
     (todo/get-todo @todos id)))
 
-
-
 ; idea: macro for generic single domain service with atom repo, as well as core.async + kv store
 
 
 (defn todo-service []
-  (let [todos (atom (make-todos))]
+  ; too much for high throughput systems, but it's rally a log
+  (let [todos (avout/zk-atom avout-client "todos" (make-todos) )]
     (map->TodosApp {:todos todos})))
