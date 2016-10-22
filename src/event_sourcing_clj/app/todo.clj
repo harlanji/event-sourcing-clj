@@ -1,11 +1,9 @@
 (ns event-sourcing-clj.app.todo
   (:require [event-sourcing-clj.domain.todo.core :as todo]
             [event-sourcing-clj.domain.todo.model :refer [make-todos]]
-            [event-sourcing-clj.infra.aggregate :as agg]
-            [avout.core :as avout]
-            ))
+            [event-sourcing-clj.infra.aggregate :refer [aggregate!] :as agg]
 
-(def avout-client (avout/connect "127.0.0.1"))
+            ))
 
 (defprotocol TodoAppCommands
   (create-todo [_ text])
@@ -18,34 +16,25 @@
   (get-todo [_ id])
   )
 
-; responsible for accepting commands and transactions
-; and emiting events. eg cross-aggregate transactions can use refs.
-;
-; note some domain logic has leaked into here... change-text + mark-down
-; might be another semantic smell.. several things using the same model method signature
-(defrecord TodosApp
-  [todos events-chan]
+(defrecord TodosApp [todos
+                     reset!
+                     swap!]
 
   TodoAppCommands
   (create-todo [_ text]
     (let [id (str "todo-" (Math/random))]
-      (agg/app-atom-command todos todo/create-new id text)))
+      (aggregate! swap! todos todo/create-new id text)))
   (change-text [_ id new-text]
-    (agg/app-atom-command todos todo/change-text id new-text))
+    (aggregate! swap! todos todo/change-text id new-text))
   (mark-done [_ id]
-    (agg/app-atom-command todos todo/change-completed id true))
+    (aggregate! swap! todos todo/change-completed id true))
   (delete-todo [_ id]
-    (agg/app-atom-command todos todo/delete id))
+    (aggregate! swap! todos todo/delete id))
 
   (all-todos [_]
     (todo/all-todos @todos))
   (get-todo [_ id]
     (todo/get-todo @todos id)))
 
-; idea: macro for generic single domain service with atom repo, as well as core.async + kv store
-
-
-(defn todo-service []
-  ; too much for high throughput systems, but it's rally a log
-  (let [todos (avout/zk-atom avout-client "todos" (make-todos) )]
-    (map->TodosApp {:todos todos})))
+(defn make-todo! [todos-atom reset! swap!]
+  (map->TodosApp {:todos todos-atom :reset! reset! :swap! swap!}))
