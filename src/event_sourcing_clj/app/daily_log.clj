@@ -1,5 +1,5 @@
 (ns event-sourcing-clj.app.daily-log
-  (:require [event-sourcing-clj.domain.ideas.core :refer :all]
+  (:require [event-sourcing-clj.domain.dail-log.core :refer :all]
             [event-sourcing-clj.infra.aggregate :as agg]))
 
 
@@ -12,33 +12,16 @@
      )
 
 
-
-(defprotocol DailyLogEvents
-  (entry-created [_ event]))
-
-
-(defprotocol TodoEvents
-  (todo-created [_ event]))
-
-
-(defprotocol Subscriber
-  (subscribe [model to-model]))
-
 (defrecord DailyLogApp [daily-log ; with event aggregated
                         ideas]
-
-  Lifecycle
-  (start [_])
-  (stop [_])
-
-  DailyLogEvents
-  (entry-created [model event]
+  #_ DailyLogEvents
+  #_ (entry-created [model event]
     (accept
       (propose ideas (->CreateIdeaFromEntryCreated event))))
 
 
-  TodoEvents
-  (todo-created [model event])
+  #_ TodoEvents
+  #_ (todo-created [model event])
 
 
   agg/Aggregate
@@ -46,8 +29,8 @@
     (comment "user dosync for transactional stores. join events? compose results inline at least."))
 
 
-  Subscriber
-  (subscribe [_ to-model]
+  #_ Subscriber
+  #_ (subscribe [_ to-model]
     {})
 
   )

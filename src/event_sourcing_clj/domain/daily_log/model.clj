@@ -1,6 +1,5 @@
 (ns event-sourcing-clj.domain.daily-log.model
   (:require [event-sourcing-clj.domain.daily-log.core :refer :all]
-            [event-sourcing-clj.domain.daily-log.core :refer :all]
             [event-sourcing-clj.infra.aggregate :refer [id]]
             [clojure.string :as str]))
 
@@ -33,12 +32,4 @@
                              :entry-id entry-id
                              :content content
                              :timestamp timestamp})]
-      (update-in model [:notes note-id] conj entry)))
-
-  #_ IdeasRead
-  #_ (ideas-for-note [model note-id]
-    (let [entries (entries-for-note model note-id)
-          ideas (mapcat #(extract-ideas model idea-id-factory %) entries)]
-      ideas))
-
-  )
+      (update-in model [:notes note-id] conj entry))))
