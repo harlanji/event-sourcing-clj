@@ -1,13 +1,27 @@
 (ns event-sourcing-clj.core
   (:require [event-sourcing-clj.app.todo :as todo-app]
+            [event-sourcing-clj.infra.web :as web-infra]
+            [event-sourcing-clj.adapter.web.todos :as todos-web]
             [com.stuartsierra.component :as component]))
 
 
 (defn make-todo-system []
   (-> (component/system-map :todo-store (atom nil)
                             :todos-app  (todo-app/map->TodosApp {:reset! reset!
-                                                                 :swap! swap!}))
-      (component/system-using {:todos-app {:todo-store :todo-store}})))
+                                                                 :swap! swap!})
+
+                            :web-config {:port 8080}
+                            :web-apps-store (atom [])
+                            :web-infra (web-infra/map->WebApp {})
+
+                            :todo-web (todos-web/map->TodoWebAdapter {})
+                            )
+      (component/system-using {:todos-app {:todo-store :todo-store}
+                               :web-infra {:opts :web-config
+                                           :apps :web-apps-store}
+
+                               :todo-web [:web-infra :todos-app]
+                               })))
 
 (defn load-sample-data [system]
   (let [todos-app (:todos-app system)]
