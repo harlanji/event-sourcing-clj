@@ -1,6 +1,6 @@
-(ns event-sourcing-clj.adapter.web.todos
+(ns event-sourcing-clj.todos.web
   (:require [event-sourcing-clj.infra.web :as web-infra]
-            [event-sourcing-clj.app.todo :as todos-app]
+            [event-sourcing-clj.todos.app :as todos-app]
             [com.stuartsierra.component :as component]
             ))
 

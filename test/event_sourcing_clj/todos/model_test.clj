@@ -1,7 +1,7 @@
-(ns event-sourcing-clj.domain.todo_test
+(ns event-sourcing-clj.todos.model_test
   (:require [clojure.test :refer :all]
-            [event-sourcing-clj.domain.todo.core :as todo]
-            [event-sourcing-clj.domain.todo.model :refer [make-todos map->Todos]]
+            [event-sourcing-clj.todos.domain.core :as todo]
+            [event-sourcing-clj.todos.domain.model :refer [make-todos map->Todos]]
 
             [event-sourcing-clj.infra.aggregate :as agg]))
 

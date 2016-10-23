@@ -1,5 +1,5 @@
-(ns event-sourcing-clj.domain.todo.model
-  (:require [event-sourcing-clj.domain.todo.core :refer :all]
+(ns event-sourcing-clj.todos.domain.model
+  (:require [event-sourcing-clj.todos.domain.core :refer :all]
             [event-sourcing-clj.infra.aggregate :refer [propose accept Aggregate]]))
 
 (defrecord Todos [store]

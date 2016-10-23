@@ -1,6 +1,6 @@
-(ns event-sourcing-clj.app.todo
-  (:require [event-sourcing-clj.domain.todo.core :as todo]
-            [event-sourcing-clj.domain.todo.model :refer [make-todos]]
+(ns event-sourcing-clj.todos.app
+  (:require [event-sourcing-clj.todos.domain.core :as todo]
+            [event-sourcing-clj.todos.domain.model :refer [make-todos]]
             [event-sourcing-clj.infra.aggregate :refer [#_ aggregate!] :as agg]
             [com.stuartsierra.component :as component]
             ))

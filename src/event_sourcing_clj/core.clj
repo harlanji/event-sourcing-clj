@@ -1,7 +1,7 @@
 (ns event-sourcing-clj.core
-  (:require [event-sourcing-clj.app.todo :as todo-app]
+  (:require [event-sourcing-clj.todos.app :as todo-app]
+            [event-sourcing-clj.todos.web :as todos-web]
             [event-sourcing-clj.infra.web :as web-infra]
-            [event-sourcing-clj.adapter.web.todos :as todos-web]
             [com.stuartsierra.component :as component]))
 
 

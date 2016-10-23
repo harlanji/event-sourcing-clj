@@ -1,4 +1,4 @@
-(ns event-sourcing-clj.domain.todo.core
+(ns event-sourcing-clj.todos.domain.core
   (:require [event-sourcing-clj.infra.aggregate
              :refer [Proposer propose Acceptor accept]
              :as agg]))
