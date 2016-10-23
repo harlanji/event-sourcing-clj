@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [com.stuartsierra/component "0.3.1"]
-                 [avout "0.5.3"]]
+                 ]
   :plugins [[lein-figwheel "0.5.8"]]
   :main ^:skip-aot event-sourcing-clj.core
   :target-path "target/%s"
