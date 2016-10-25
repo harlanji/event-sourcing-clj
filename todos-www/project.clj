@@ -33,7 +33,7 @@
                            ;; Comment this out once it no longer serves you.
                            :open-urls ["http://localhost:3449/index.html"]}
 
-                :compiler {:main todos-www.core
+                :compiler {:main todos-www.app
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/todos_www.js"
                            :output-dir "resources/public/js/compiled/out"
@@ -47,7 +47,7 @@
                {:id "min"
                 :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/todos_www.js"
-                           :main todos-www.core
+                           :main todos-www.backend
                            :optimizations :advanced
                            :pretty-print false}}]}
 
@@ -96,6 +96,7 @@
   :profiles {:dev {:dependencies [[binaryage/devtools "0.8.2"]
                                   [figwheel-sidecar "0.5.8"]
                                   [com.cemerick/piggieback "0.2.1"]]
+                   :figwheel {:ring-handler todos-www.backend/ring-handler}
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    ;; for CIDER
