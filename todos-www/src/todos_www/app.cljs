@@ -1,5 +1,6 @@
 (ns todos-www.app
-  (:require [todos-www.core :refer [main-ui]]
+  (:require [todos-www.core :refer [make-model]]
+            [todos-www.ui :refer [main-ui]]
             [rum.core :as rum]))
 
 
@@ -7,7 +8,8 @@
 
 (defn main []
   (let [app-dom (.getElementById js/document "app")
-        app-ui (main-ui)
+        model (make-model)
+        app-ui (main-ui model)
         ]
     (rum/mount app-ui app-dom)))
 
@@ -21,6 +23,7 @@
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
   (swap! app-state update-in [:__figwheel_counter] inc)
+  (main)
   )
 
 (main)

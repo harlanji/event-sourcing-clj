@@ -1,11 +1,13 @@
 (ns todos-www.backend
-  (:require [todos-www.core :refer :all]
+  (:require [todos-www.core :refer [make-model]]
+            [todos-www.ui :refer [main-ui layout-ui]]
             [rum.core :as rum]))
 
 
 (defn main-html []
-  (let [app-ui (main-ui)]
-    (rum/render-html (main-template app-ui))))
+  (let [model (make-model)
+        app-ui (main-ui model)]
+    (rum/render-html (layout-ui app-ui))))
 
 
 ; note: this will not automaticallt reload because the figwheel plugin doesn't wrap-reload etc with its magic...
