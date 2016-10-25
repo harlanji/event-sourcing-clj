@@ -1,5 +1,6 @@
 (ns todos-www.core
-  (:require [clojure.pprint :refer [pprint]]))
+  (:require [clojure.pprint :refer [pprint]]
+            [rum.core :as rum]))
 
 (enable-console-print!)
 
@@ -17,38 +18,26 @@
 (defn with-tasks [date-seq]
   (map #(assoc % :tasks (tasks-for-date %)) date-seq))
 
-(defn task-ui [task d]
+(rum/defc task-ui [task d]
   [:li.task (:name task)])
 
-(defn calendar-day-ui [d]
+(rum/defc calendar-day-ui [d]
   [:div.day
    [:p.date (:d d)]
    [:ul.task-list (map task-ui (:tasks d))]])
 
-(defn calendar-grid-ui [date-task-seq]
+(rum/defc calendar-grid-ui < rum/static [date-task-seq]
   (let [calendar-days (map calendar-day-ui date-task-seq)
         week-rows (partition 7 calendar-days)]
     [:div.calendar (map (fn [%] [:div.week %]) week-rows)]))
 
-(defn pprint-html [obj]
-  (str "<pre>"
-       (with-out-str
-         (pprint obj))
-       "</pre>"))
-
-
-(let [body-html (-> (date-seq 1 1 31)
-                    with-tasks
-                    calendar-grid-ui
-                    pprint-html)
-      ]
-  ; 3 ways to set a JS property
-  (set! (-> js/document .-body .-innerHTML) ; Clojure (the thread-first macro)
-        ;(.. js/document -body -innerHTML) ; JS Interop (the dot-dot special form)
-        ;(.-innerHTML (.-body js/document)) ; LISP (prefix notation)
-        body-html)
-
-  )
+(defn main []
+  (let [app-dom (.getElementById js/document "app")
+        app-ui (-> (date-seq 1 1 31)
+                   with-tasks
+                   calendar-grid-ui)
+        ]
+    (rum/mount app-ui app-dom)))
 
 ;; ---
 
@@ -62,3 +51,4 @@
   (swap! app-state update-in [:__figwheel_counter] inc)
 )
 
+(main)
