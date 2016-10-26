@@ -15,3 +15,9 @@
 (defn make-model []
   (-> (date-seq 1 1 31)
       with-tasks))
+
+(def app-routes
+  ["/"
+   [["index-rum.html" :index]
+    ["index.html" :index]
+    [true :four-o-four]]])

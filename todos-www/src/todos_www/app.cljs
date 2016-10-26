@@ -1,6 +1,7 @@
 (ns todos-www.app
-  (:require [todos-www.core :refer [make-model]]
+  (:require [todos-www.core :refer [make-model app-routes]]
             [todos-www.ui :refer [main-ui]]
+            [bidi.bidi :as bidi]
             [rum.core :as rum]))
 
 
@@ -8,6 +9,7 @@
 
 (defn main []
   (let [app-dom (.getElementById js/document "app")
+        ;route (bidi/match)
         model (make-model)
         app-ui (main-ui model)
         ]
@@ -26,4 +28,15 @@
   (main)
   )
 
-(main)
+
+; ---
+
+; https://pez.github.io/2016/03/01/Reagent-clientside-routing-with-Bidi-and-Accountant.html
+
+(defn ^:export init! []
+
+  (on-js-reload)
+  )
+
+
+(init!)
