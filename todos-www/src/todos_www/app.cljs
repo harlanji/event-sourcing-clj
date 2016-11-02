@@ -18,7 +18,7 @@
 (defonce app-state (atom (make-model)))
 
 
-(defn es-events
+(defn sse-events
   "Handle events from an ES URL with EDN-read event types (kw is nice). Handler gets event triple [type data event]."
   [url handler-map]
   (let [es (new js/EventSource url)
@@ -41,11 +41,11 @@
           (handler event))
         (recur)))))
 
-(defn put-event [type data]
+(defn ^:export put-event [type data]
   (http/put "/events?session=abc123" {:edn-params {:type type
                                                    :data data}}))
 
-(es-events "/events?session=abc123"
+(sse-events "/events/sse?session=abc123"
            {:message (fn [message] (println message))
             :coolness (fn [coolness]
                         ; echo coolness back

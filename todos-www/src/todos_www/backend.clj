@@ -37,13 +37,15 @@
                (println "received event in session" session-id ": " event)
                (recur)))
 
-    (async/go-loop []
+
+    #_ (async/go-loop []
       (let [event (if (< 0.5 (rand))
                     {:name :message :data {:a 1 :b [:c 2]}}
                     {:name :coolness :data #{"alice" "bob"}})]
         (async/>!! event-chan event)
         (async/<! (async/timeout 1000))
-        (recur)))))
+        (recur)))
+    nil))
 
 (defn put-event [req]
   (let [session-id (session-id req)
@@ -57,8 +59,8 @@
 
 (defn with-sse [routes]
   (conj routes
-        ["/events" :get [(body-params) query-params (sse/start-event-stream stream-ready)]]
-        ["/events" :put [(body-params) query-params `put-event]]))
+        ["/events" :put [(body-params) query-params `put-event]]
+        ["/events/sse" :get [(body-params) query-params (sse/start-event-stream stream-ready)]]))
 
 ;(def common-interceptors [(body-params/body-params) http/html-body])
 
