@@ -1,7 +1,7 @@
 (ns todos-www.backend
   (:require [todos-www.core :refer [make-model]]
             [todos-www.ui :refer [main-ui layout-ui]]
-            [todos-www.routes :refer :all]
+            [todos-www.routes :refer [routes]]
 
             [rum.core :as rum]
             [com.stuartsierra.component :as component]
@@ -26,10 +26,6 @@
 (defn hello-world-handler
   [request]
   {:status 200 :headers {} :body "Hello World"})
-
-(defn routes []
-  #{["/" :get `hello-world-handler]
-    ["/index.html" :get `index-handler]})
 
 (defn service [routes]
   {:env :prod

@@ -13,7 +13,6 @@
                  [com.stuartsierra/component "0.3.1"]
                  [io.pedestal/pedestal.service "0.5.1"]
                  [io.pedestal/pedestal.jetty "0.5.1"]
-                 [lumos-pedestal-component "0.1.1"]
                  [rum "0.10.7"]
                  [com.taoensso/sente "1.11.0"]
                  [figwheel-sidecar "0.5.8"]

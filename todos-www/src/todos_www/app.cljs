@@ -1,11 +1,14 @@
 (ns todos-www.app
   (:require [todos-www.core :refer [make-model]]
             [todos-www.ui :refer [main-ui]]
+            [todos-www.routes :refer [routes]]
             [rum.core :as rum]))
 
 
 (enable-console-print!)
 
+
+(println (routes))
 
 (defonce app-state (atom (make-model)))
 
