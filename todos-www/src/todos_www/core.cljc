@@ -5,7 +5,7 @@
   (map (fn [%] {:m m :d %}) (range from to)))
 
 (defn tasks-for-date [d]
-  (if (> 0.25 (rand))
+  (if (even? (:d d))
     [{:name (str "Todo " (:d d))}]
     []))
 
@@ -15,9 +15,3 @@
 (defn make-model []
   (-> (date-seq 1 1 31)
       with-tasks))
-
-(def app-routes
-  ["/"
-   [["index-rum.html" :index]
-    ["index.html" :index]
-    [true :four-o-four]]])

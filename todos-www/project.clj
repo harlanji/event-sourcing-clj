@@ -10,13 +10,20 @@
                  [org.clojure/clojurescript "1.9.229"]
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
-                 [bidi "2.0.13"]
-                 [rum "0.10.7"]]
+                 [com.stuartsierra/component "0.3.1"]
+                 [io.pedestal/pedestal.service "0.5.1"]
+                 [io.pedestal/pedestal.jetty "0.5.1"]
+                 [lumos-pedestal-component "0.1.1"]
+                 [rum "0.10.7"]
+                 [com.taoensso/sente "1.11.0"]
+                 [figwheel-sidecar "0.5.8"]
+                 ]
 
-  :plugins [[lein-figwheel "0.5.8"]
-            [lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]
+  :plugins [[lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]
 
   :source-paths ["src"]
+
+  :main ^{:skip-aot true} todos-www.backend
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
@@ -27,12 +34,12 @@
                 ;; the presence of a :figwheel configuration here
                 ;; will cause figwheel to inject the figwheel client
                 ;; into your build
-                :figwheel {:on-jsload "todos-www.core/on-js-reload"
+                :figwheel {:on-jsload "todos-www.app/on-js-reload"
                            ;; :open-urls will pop open your application
                            ;; in the default browser once Figwheel has
                            ;; started and complied your application.
                            ;; Comment this out once it no longer serves you.
-                           :open-urls ["http://localhost:3449/index.html"]}
+                           :open-urls ["http://localhost:8080/index.html"]}
 
                 :compiler {:main todos-www.app
                            :asset-path "js/compiled/out"
@@ -48,7 +55,7 @@
                {:id "min"
                 :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/todos_www.js"
-                           :main todos-www.backend
+                           :main todos-www.app
                            :optimizations :advanced
                            :pretty-print false}}]}
 
@@ -95,9 +102,9 @@
 
 
   :profiles {:dev {:dependencies [[binaryage/devtools "0.8.2"]
-                                  [figwheel-sidecar "0.5.8"]
                                   [com.cemerick/piggieback "0.2.1"]]
-                   :figwheel {:ring-handler todos-www.backend/ring-handler}
+
+
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    ;; for CIDER
