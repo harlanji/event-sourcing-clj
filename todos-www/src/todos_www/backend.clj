@@ -1,5 +1,6 @@
 (ns todos-www.backend
-  (:require [todos-www.core :refer [make-model]]
+  (:require [clojure.core.async :as async]
+            [todos-www.core :refer [make-model]]
             [todos-www.ui :refer [main-ui layout-ui]]
             [todos-www.routes :refer [routes]]
 
@@ -10,8 +11,25 @@
             [io.pedestal.http.body-params :as body-params]
 
             [figwheel-sidecar.system :as sys]
+            [io.pedestal.http.sse :as sse]
+
             ))
 
+
+(defn stream-ready [event-chan context]
+  (dotimes [_ 20]
+    (let [event (if (< 0.5 (rand))
+                  {:name :message :data {:a 1 :b [:c 2]}}
+                  {:name :coolness :data #{"alice" "bob"}}
+                  )]
+      (async/>!! event-chan event))
+    (Thread/sleep 1000))
+  (async/close! event-chan))
+
+
+(defn with-sse [routes]
+  (conj routes
+        ["/events" :get [(sse/start-event-stream stream-ready)]]))
 
 ;(def common-interceptors [(body-params/body-params) http/html-body])
 
@@ -73,7 +91,7 @@
 (defn system []
   (component/system-map
     :figwheel (sys/figwheel-system (sys/fetch-config))
-    :http-server (pedestal-server (service (routes)))))
+    :http-server (pedestal-server (service (with-sse (routes))))))
 
 
 (defn -main [& args]
