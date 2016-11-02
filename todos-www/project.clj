@@ -16,6 +16,7 @@
                  [rum "0.10.7"]
                  [com.taoensso/sente "1.11.0"]
                  [figwheel-sidecar "0.5.8"]
+                 [cljs-http "0.1.42"]
                  ]
 
   :plugins [[lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]

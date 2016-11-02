@@ -8,28 +8,57 @@
             [com.stuartsierra.component :as component]
 
             [io.pedestal.http :as http]
-            [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.http.body-params :refer [body-params]]
+            [io.pedestal.http.route :refer [query-params]]
 
             [figwheel-sidecar.system :as sys]
             [io.pedestal.http.sse :as sse]
 
             ))
 
+(def sessions (atom {}))
 
-(defn stream-ready [event-chan context]
-  (dotimes [_ 20]
-    (let [event (if (< 0.5 (rand))
-                  {:name :message :data {:a 1 :b [:c 2]}}
-                  {:name :coolness :data #{"alice" "bob"}}
-                  )]
-      (async/>!! event-chan event))
-    (Thread/sleep 1000))
-  (async/close! event-chan))
+(defn session-id [request]
+  (get-in request [:query-params :session]))
 
+(defn stream-ready [event-chan pedestal-context]
+  (let [{:keys [request]} pedestal-context
+        session-id (session-id request)
+        in (async/chan)
+        session {:out event-chan :in in}]
+
+    (println "started session" session-id)
+
+    (swap! sessions assoc session-id session)
+
+    ; incoming
+    (async/go-loop []
+             (when-let [event (async/<! in)]
+               (println "received event in session" session-id ": " event)
+               (recur)))
+
+    (async/go-loop []
+      (let [event (if (< 0.5 (rand))
+                    {:name :message :data {:a 1 :b [:c 2]}}
+                    {:name :coolness :data #{"alice" "bob"}})]
+        (async/>!! event-chan event)
+        (async/<! (async/timeout 1000))
+        (recur)))))
+
+(defn put-event [req]
+  (let [session-id (session-id req)
+        session (get @sessions session-id)
+        in (:in session)
+        event (:edn-params req)]
+    (async/go (async/>! in event))
+    {:status 200}))
+
+(println "hi")
 
 (defn with-sse [routes]
   (conj routes
-        ["/events" :get [(sse/start-event-stream stream-ready)]]))
+        ["/events" :get [(body-params) query-params (sse/start-event-stream stream-ready)]]
+        ["/events" :put [(body-params) query-params `put-event]]))
 
 ;(def common-interceptors [(body-params/body-params) http/html-body])
 

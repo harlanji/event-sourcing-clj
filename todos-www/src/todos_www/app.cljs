@@ -5,6 +5,7 @@
             [rum.core :as rum]
             [cljs.core.async :refer [<!] :as async]
             [cljs.reader :as reader]
+            [cljs-http.client :as http]
             )
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -20,7 +21,7 @@
 (defn es-events
   "Handle events from an ES URL with EDN-read event types (kw is nice). Handler gets event triple [type data event]."
   [url handler-map]
-  (let [es (new js/EventSource "/events")
+  (let [es (new js/EventSource url)
         incoming-events (async/chan)
         on-event (fn [event]
                      (go (async/>! incoming-events
@@ -40,9 +41,18 @@
           (handler event))
         (recur)))))
 
-(es-events "/events"
+(defn put-event [type data]
+  (http/put "/events?session=abc123" {:edn-params {:type type
+                                                   :data data}}))
+
+(es-events "/events?session=abc123"
            {:message (fn [message] (println message))
-            :coolness (fn [coolness] (println "coolness! " coolness))})
+            :coolness (fn [coolness]
+                        ; echo coolness back
+                        (println "coolness! " coolness)
+                        (put-event :coolness (second coolness)))})
+
+
 
 (defn main []
   (let [app-dom (.getElementById js/document "app")
