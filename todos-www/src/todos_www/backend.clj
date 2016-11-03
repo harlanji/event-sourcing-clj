@@ -1,6 +1,6 @@
 (ns todos-www.backend
   (:require [clojure.core.async :as async]
-            [todos-www.core :refer [make-model]]
+            [todos-www.core :refer [make-model] :as todos]
             [todos-www.ui :refer [main-ui layout-ui]]
             [todos-www.routes :refer [routes]]
 
@@ -8,7 +8,7 @@
             [com.stuartsierra.component :as component]
 
             [io.pedestal.http :as http]
-            [io.pedestal.http.body-params :refer [body-params]]
+            [io.pedestal.http.body-params :refer [body-params] :as bp]
             [io.pedestal.http.route :refer [query-params]]
 
             [figwheel-sidecar.system :as sys]
@@ -37,6 +37,9 @@
                (println "received event in session" session-id ": " event)
                (recur)))
 
+    (async/>!! event-chan {:name ::todos/key-created
+                           :data (todos/->key-created :k :v)})
+
 
     #_ (async/go-loop []
       (let [event (if (< 0.5 (rand))
@@ -52,12 +55,17 @@
         session (get @sessions session-id)
         in (:in session)
         event (:edn-params req)]
+    (println "event!" event)
     (async/go (async/>! in event))
     {:status 200}))
 
 (println "hi")
 
 (defn with-sse [routes]
+
+  ; todo use tagged for records
+  ;(let [parsers (bp/default-parser-map {:edn-options {}})])
+
   (conj routes
         ["/events" :put [(body-params) query-params `put-event]]
         ["/events/sse" :get [(body-params) query-params (sse/start-event-stream stream-ready)]]))

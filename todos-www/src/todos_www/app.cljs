@@ -1,5 +1,5 @@
 (ns todos-www.app
-  (:require [todos-www.core :refer [make-model]]
+  (:require [todos-www.core :refer [make-model] :as todos]
             [todos-www.ui :refer [main-ui]]
             [todos-www.routes :refer [routes]]
             [rum.core :as rum]
@@ -66,13 +66,12 @@
 ;; define your app data so that it doesn't get over-written on reload
 
 
-
 (defn on-js-reload []
+  (put-event ::todos/create-key #_ (todos/->create-key :k :v) [:k :v])
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
   (main)
   )
-
 
 ; ---
 
