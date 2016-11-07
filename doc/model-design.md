@@ -1,4 +1,90 @@
-# Model Design
+## Model Design Process
+
+0. why?
+
+ a. brains learn structure
+ 
+ b. I am lazy
+ 
+  1. teach structure
+  
+ c. communication is hard 
+  
+  1. you make code
+
+  2. code is data
+   
+     you know your data
+    
+     you know your code
+    
+     we can both read, write, and speak it
+    
+     it's plain text
+    
+  3. plain text is good 
+
+  4. learn by example
+   
+1. model
+
+ a. data
+ 
+  1. entities
+
+     :id for PK
+
+     :fields can be values, collections, entities
+
+     maker fully constructs
+
+     O(1) equality is provided
+
+  2. value objects 
+  
+     FK ref to :id
+   
+     multi-field types like address
+     
+   3. from outside
+
+     is eventually consistent
+
+ b. functions 
+    
+  1. proposal
+
+    a description of something we'd like to happen to a model
+
+  2. events
+  
+    a description of something that happened to a model
+
+2. code
+
+ a. data + functions = model
+ 
+ b. model + input + expectation = test
+ 
+ c. model + wiring = service
+ 
+ d. mutable data about env = config
+
+ e. service + config + resources = container
+
+3. infra / operations
+
+ a. test
+
+ b. repl
+
+ c. go
+
+
+-
+
+
+## Model Design
 
 A model is like a scene and threads are like actors. We can have several actors on stage interacting with things and each other, but if they were to close their eyes and blindly try to interact with objects they knew about, they might start bumping into other actors who cross their paths or try to interact with the same object.
 
