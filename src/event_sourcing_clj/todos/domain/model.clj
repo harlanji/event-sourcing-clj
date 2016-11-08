@@ -21,7 +21,7 @@
   (remove-done [model done-ids]
     (update model :store #(apply dissoc % done-ids)))
 
-  Request
+  Propose
   (create-new [model id text]
     (propose (->CreateNew id text) model))
   (create-complete [model id text]

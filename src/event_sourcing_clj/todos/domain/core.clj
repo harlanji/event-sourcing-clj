@@ -24,7 +24,7 @@
   (delete-todo [_ id])
   (remove-done [_ done-ids]))
 
-(defprotocol Request
+(defprotocol Propose
   (create-new [_ id text])
   (create-complete   [_ id text])
   (change-text [_ id new-text])
@@ -49,6 +49,8 @@
       (->Created id text false))))
 
 ; example use case... multiple proposers for one event
+; this is why events are before proposers (state transitions + validator)
+; event binding stuff my be like events... text changed/text complete (built in event stuff)
 (defrecord CreateComplete [id text]
   Proposer
   (propose [_ model]
@@ -57,7 +59,9 @@
 
 
 ; -- change text of a todo
-
+; state transitions
+; idea: opennlp to autogen names by transform
+; idea: Rails - one powerful idea is pluralizing... since it's a collection oriented system
 (defrecord TextChanged [id new-text]
   Acceptor
   (accept [_ model]
@@ -110,6 +114,7 @@
     (remove-done model done-ids)))
 
 
+; many values, one transaction
 (defrecord ClearDone []
   Proposer
   (propose [_ model]
