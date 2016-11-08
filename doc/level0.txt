@@ -1,0 +1,76 @@
+# Level 0
+
+From novice to reader and writer of EDN and REPLer, evaluator of basic forms.
+
+;------
+
+() list
+[] vector
+#{} set
+{} map
+:keyword
+
+"string"
+0
+0.0
+symbol
+
+edn is json with better types
+
+-
+
+nestable
+
+{:a 1 "b" 2 [:d :e] {:f ghi}}
+
+-
+
+calling a function
+
+(____ ? ? ?)
+
+-
+
+*-> read <-+
+    eval   |
+    print -+ (loop)   
+
+repl
+
+```
+hello-world.core=> (str "Hello" ", " "world" "!")
+Hello, world!
+```
+
+-
+
+namespaces
+
+:ns/neyword
+symbol/keyword
+
+each Clojure file has a (ns) form that establishes a module/package.
+
+a namespace can exist without a file--created from repl
+
+-
+
+symbol vs. keyword
+
+symbol has meaning in environment, keyword is always itself
+
+-
+
+reader
+
+files, repl -> reader <-> macro -> ...
+
+-
+
+atoms, agents, refs
+
+models of change over time
+
+data update boundaries
+
+durable persistence api
