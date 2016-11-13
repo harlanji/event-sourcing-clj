@@ -16,12 +16,10 @@
 
             ))
 
-(def sessions (atom {}))
-
 (defn session-id [request]
   (get-in request [:query-params :session]))
 
-(defn stream-ready [event-chan pedestal-context]
+(defn stream-ready [sessions event-chan pedestal-context]
   (let [{:keys [request]} pedestal-context
         session-id (session-id request)
         in (async/chan)
@@ -50,7 +48,7 @@
         (recur)))
     nil))
 
-(defn put-event [req]
+(defn put-event [sessions req]
   (let [session-id (session-id req)
         session (get @sessions session-id)
         in (:in session)
@@ -61,19 +59,23 @@
 
 (println "hi")
 
-(defn with-sse [routes]
+(defn with-sse [routes sessions]
 
   ; todo use tagged for records
   ;(let [parsers (bp/default-parser-map {:edn-options {}})])
 
   (conj routes
-        ["/events" :put [(body-params) query-params `put-event]]
-        ["/events/sse" :get [(body-params) query-params (sse/start-event-stream stream-ready)]]))
+        ["/events" :put [(body-params) query-params (partial put-event sessions)] :route-name :events]
+        ["/events/sse" :get [(body-params) query-params (sse/start-event-stream (partial stream-ready sessions))] :route-name :stream-ready]
+        ))
 
 ;(def common-interceptors [(body-params/body-params) http/html-body])
 
+(defn model-for-session [req]
+  (make-model))
+
 (defn main-html [req]
-  (let [model (make-model)
+  (let [model (model-for-session req)
         app-ui (main-ui model)]
     (rum/render-html (layout-ui app-ui))))
 
@@ -127,11 +129,12 @@
   (map->PedestalServer {:service service}))
 
 
-(defn system []
+(defn system [sessions]
   (component/system-map
     :figwheel (sys/figwheel-system (sys/fetch-config))
-    :http-server (pedestal-server (service (with-sse (routes))))))
+    :http-server (pedestal-server (service (with-sse (routes) sessions)))))
 
+(defonce sessions (atom {}))
 
 (defn -main [& args]
-  (component/start (system)))
+  (component/start (system sessions)))
