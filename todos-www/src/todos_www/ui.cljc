@@ -3,12 +3,13 @@
 
 
 (defc task-ui [task]
-  [:li.task (:name task)])
+  [:li.pure-menu-item.no-height [:a.pure-menu-link.task {:href "#"} (:name task)]])
+
 
 (defc calendar-day-ui [d]
-  [:div.day
-   [:p.date (:d d)]
-   (into [:ul.task-list] (map task-ui (:tasks d)))])
+  [:.pure-menu.day
+   [:span.pure-menu-heading.date (str "November " (:d d))]
+   (into [:ul.pure-menu-list.task-list] (map task-ui (:tasks d)))])
 
 (defc calendar-grid-ui [date-task-seq]
   (let [calendar-days (map calendar-day-ui date-task-seq)
@@ -20,9 +21,16 @@
    [:head
     [:meta {:charset "UTF-8"}]
     [:meta {:name "viewport"
-            :content "width=device-width, initial-scale=1"}]]
+            :content "width=device-width, initial-scale=1"}]
+    [:link {:rel "stylesheet" :href "http://yui.yahooapis.com/pure/0.6.0/pure-min.css"}]
+    [:link {:rel "stylesheet" :href "css/style.css"}]]
    [:body
-    [:#app content]
+    [:.content
+      [:.pure-g
+       [:.pure-u-1-6]
+       [:.pure-u-2-3
+        [:#app content]]
+       [:.pure-u-1-6]]]
     [:script {:src "js/compiled/todos_www.js" :type "text/javascript"}]]])
 
 (defc main-ui [model]

@@ -1,2 +1,5 @@
 /* some style */
 
+.no-height {
+    height: auto;
+}
