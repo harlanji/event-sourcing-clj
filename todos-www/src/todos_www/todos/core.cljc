@@ -1,4 +1,4 @@
-(ns todos-www.core
+(ns todos-www.todos.core
   (:require [clojure.pprint :refer [pprint]]))
 
 (defn date-seq [m from to]
@@ -68,10 +68,6 @@
     (put-value model k v)))
 
 
-
-
-
-(println "class: " (type (->create-key :a :b)))
 
 
 

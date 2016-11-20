@@ -1,7 +1,7 @@
-(ns todos-www.app
-  (:require [todos-www.core :refer [make-model] :as todos]
-            [todos-www.ui :refer [main-ui]]
-            [todos-www.routes :refer [routes]]
+(ns todos-www.ui
+  (:require [todos-www.todos.core :refer [make-model] :as todos]
+            [todos-www.todos.ui :refer [main-ui]]
+            [todos-www.todos.routes :refer [routes]]
             [rum.core :as rum]
             [cljs.core.async :refer [<!] :as async]
             [cljs.reader :as reader]
@@ -14,6 +14,10 @@
 
 
 (println (routes))
+
+(println "class: " (type (todos/->create-key :a :b)))
+
+
 
 (defonce app-state (atom (make-model)))
 

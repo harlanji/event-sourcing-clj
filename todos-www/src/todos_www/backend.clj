@@ -1,10 +1,8 @@
 (ns todos-www.backend
   (:require [clojure.core.async :as async]
-            [todos-www.core :refer [make-model] :as todos]
-            [todos-www.ui :refer [main-ui layout-ui]]
-            [todos-www.routes :refer [routes]]
+            [todos-www.todos.core :as todos]
+            [todos-www.todos.routes :refer [routes]]
 
-            [rum.core :as rum]
             [com.stuartsierra.component :as component]
 
             [io.pedestal.http :as http]
@@ -71,20 +69,6 @@
 
 ;(def common-interceptors [(body-params/body-params) http/html-body])
 
-(defn model-for-session [req]
-  (make-model))
-
-(defn main-html [req]
-  (let [model (model-for-session req)
-        app-ui (main-ui model)]
-    (rum/render-html (layout-ui app-ui))))
-
-(defn index-handler [req]
-  {:status 200 :headers {"content-type" "text/html"} :body (main-html req)})
-
-(defn hello-world-handler
-  [request]
-  {:status 200 :headers {} :body "Hello World"})
 
 (defn service [routes]
   {:env :prod
